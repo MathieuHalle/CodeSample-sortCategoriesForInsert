@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sort Categories For Insert</title>
+
+    <!-- Adding Materialize Compiled and minified CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.5/css/materialize.min.css"
+    />
+
+    <!-- Adding some CSS -->
+    <style>
+      body {
+        padding: 50px;
+      }
+
+      .btn {
+        margin-bottom: 0.8em;
+        padding-left: 1em;
+        padding-right: 1em;
+      }
+      #loading-screen.hidden {
+        display: none;
+      }
+
+      .collection-item .strong {
+        font-weight: bold;
+      }
+
+      .collection-item .light {
+        font-weight: normal;
+        font-size: 0.8em;
+      }
+
+      ul > ul {
+        margin-left: 25px !important;
+      }
+
+      pre {
+        font-size: 0.8em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col s12 m6 l4">
+          <h5>Demo data set</h5>
+          <a class="btn" data-path="/api?raw=true">Raw</a>
+          <a class="btn" data-path="/api?flatten=true">Sorted</a>
+          <a class="btn" data-path="/api">Nested</a>
+
+          <h5>Small data set</h5>
+          <a class="btn" data-path="/api/small?raw=true">Raw</a>
+          <a class="btn" data-path="/api/small?flatten=true">Sorted</a>
+          <a class="btn" data-path="/api/small">Nested</a>
+
+          <h5>Large data set</h5>
+          <a class="btn" data-path="/api/large?raw=true">Raw</a>
+          <a class="btn" data-path="/api/large?flatten=true">Sorted</a>
+          <a class="btn" data-path="/api/large">Nested</a>
+        </div>
+        <div class="col s12 m6 l8 content-box">
+          <div id="loading-screen" class="hidden">
+            <div class="progress">
+              <div class="indeterminate"></div>
+            </div>
+          </div>
+          <div id="results-box">
+            <h3>Sort Categories For Insert</h3>
+            <p>
+              Sorting a category list from a flat database for insert into a
+              hierarchy-constrained one.
+              <pre>module.exports = function sortCategoriesForInsert() ...</pre>
+            </p>
+            <p>⬅ ⬅ Click one of the buttons to start.</p>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="text/javascript">
+      // Define some variables and get various DOM elements
+      const loadingScreen = document.getElementById("loading-screen");
+      const resultsBox = document.getElementById("results-box");
+      var isLoading = false;
+
+      // Bind action to our navigation buttons
+      const actionBtn = document.getElementsByClassName("btn");
+      for (let i = 0, l = actionBtn.length; i < l; i++) {
+        actionBtn[i].addEventListener("click", function (e) {
+          e.preventDefault();
+          fetchData(actionBtn[i].dataset.path);
+        });
+      }
+
+      // Function to load the data from our API and generate the HTML content
+      // once the data is loaded
+      const fetchData = function (url) {
+        // If data is already loading data, ignore subsequent clicks
+        if (!isLoading) {
+          // Update our UI, so the user know we are working on its request
+          disableForm();
+
+          // Call our API to get the data
+          fetch(url)
+            .then((response) => response.json())
+            .then((data) => {
+              // We got a string from the server and need to parse it
+              let JSONData = JSON.parse(data);
+
+              // Generate the HTML content from our data
+              let generatedList = generateHTMLList(JSONData);
+
+              // Add our content to the page DOM
+              resultsBox.appendChild(generatedList);
+
+              // Reset our UI so the user can click the button again
+              resetForm();
+            })
+            .catch((error) => {
+              // If there was an error, log it to the console and reset the UI
+              console.error("Error:", error);
+              resetForm();
+            });
+        }
+      };
+
+      // Function that generates the HTML content from an array of elements
+      const generateHTMLList = function (data) {
+        // Prepare the outer container
+        let outputContainer = document.createElement("ul");
+        outputContainer.classList.add("collection");
+
+        // Loop through our data and generate a new HTML element for each one
+        for (let i = 0, l = data.length; i < l; i++) {
+          // Create a li element
+          let liContainer = document.createElement("li");
+          liContainer.classList.add("collection-item");
+
+          // Add the name to our li
+          var name = document.createElement("div");
+          name.classList.add("strong");
+          name.innerHTML = data[i].name;
+          liContainer.appendChild(name);
+
+          // Add the ID and parent ID to ou li
+          var ids = document.createElement("div");
+          ids.classList.add("light");
+          ids.innerHTML = `ID: ${data[i].id}; Parent ID: ${
+            data[i].parent_id || "None"
+          };`;
+          liContainer.appendChild(ids);
+
+          // If this element has children, add them here
+          if (data[i].hasOwnProperty("kids")) {
+            liContainer.appendChild(generateHTMLList(data[i].kids));
+          }
+
+          // Add the new li to our ul container
+          outputContainer.appendChild(liContainer);
+        }
+
+        return outputContainer;
+      };
+
+      // This function will disable the UI on the page
+      const disableForm = function () {
+        // Show the loading screen
+        loadingScreen.classList.remove("hidden"); 
+
+        // Disable all buttons
+        for (let i = 0, l = actionBtn.length; i < l; i++) {
+          actionBtn[i].classList.add("disabled");
+        }
+
+        // Clear results container
+        resultsBox.innerHTML = ""; 
+
+        // Update the page status
+        isLoading = true; 
+      };
+
+      // This function will reset the UI on the page
+      const resetForm = function () {
+        // Remove the loading screen
+        loadingScreen.classList.add("hidden"); 
+
+        // Enable all buttons
+        for (let i = 0, l = actionBtn.length; i < l; i++) {
+          actionBtn[i].classList.remove("disabled");
+        }
+
+        // Update the page status
+        isLoading = false; 
+      };
+
+    </script>
+  </body>
+</html>
